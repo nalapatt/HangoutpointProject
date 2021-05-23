@@ -83,7 +83,7 @@ untick install automatically
 
 Press JDk installations
 Give a JDK name ( any name)
-Give the path ( in my case it is usr/lib/jvm/java-8-openjdk-amd64 )(to find path type this, update-alternatives --list java 
+Give the path ( in my case it is /usr/lib/jvm/java-11-openjdk-amd64 )(to find path type this, update-alternatives --list java 
 (the path is the ones before the jdk file)
 untick install automatically
 if there is an error saying this is not a jdk diretory, check the path , if correct,
@@ -103,3 +103,8 @@ Click Install without Restart
 Now you will be able to see the Maven Build in the Create Job section of Jenkins
 Git Plugin in the manage plugins section
 Click Install without Restart
+
+# add slave as jenkins user 
+sudo useradd -m jenkins
+sudo -u jenkins mkdir /home/jenkins/.ssh
+
