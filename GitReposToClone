@@ -1,0 +1,5 @@
+# These files can be forked into your repo and then cloned 
+
+git clone https://github.com/nalapatt/ansible-role-jenkins.git
+git clone https://github.com/nalapatt/ansible-role-java.git
+git clone https://github.com/nalapatt/JenkinsPipelinewithMaven.git
