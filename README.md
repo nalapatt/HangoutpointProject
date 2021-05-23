@@ -37,22 +37,7 @@ select Ubuntu 18.04 and default settings and launch instances
  - sudo apt install -y git zip python
  
  # Create 2 files for roles and config
-- cat inv.yml
-[jenkins]
-localhost
-
-- cat install-jenkins.yml
-- hosts: jenkins
-  connection: local
-  vars:
-    jenkins_hostname: localhost
-    jenkins_admin_username: admin
-    jenkins_admin_password: admin
-  roles:
-    - role: nalapatt.java
-      become: yes
-    - role: nalapatt.jenkins
-      become: yes
+git clone https://github.com/nalapatt/HangoutpointProject.git
       
  mv ansible-role-java nalapatt.java
  mv ansible-role-jenkins nalapatt.jenkins
@@ -60,7 +45,8 @@ localhost
  mkdir playbooks
  mkdir playbooks/roles
  mv nalapatt.j* playbooks/roles/
- mv install-jenkins.yml playbooks/roles/
+ mv HangoutpointProject/install-jenkins.yaml playbooks/roles/
+ cp HangoutpointProject/inv.yaml inv.yaml 
  ls playbooks/roles/
  [which should show] nalapatt.java  nalapatt.jenkins install-jenkins.yml
  
@@ -68,11 +54,52 @@ localhost
  sudo apt update
  sudo apt install ansible
  # Execute Playbook
- sudo ansible-playbook -i inv.yml playbooks/roles/install-jenkins.yml
+ sudo ansible-playbook -i inv.yaml playbooks/roles/install-jenkins.yaml
  
  # Enable Jenkins
  sudo systemctl status jenkins
  sudo systemctl enable jenkins 
 
  
- 
+# Install java and maven and configure jenkins with plugins
+
+in a new tab open https://maven.apache.org/download.cgi
+Download apache-maven-3.6.3-bin.zip ( if this downloads on your local machine instead of in the VM either download filezilla to transfer the files into the VM
+
+or use SCP or FTP to copy the files from your local to the azure VM)
+
+check is the zip file is dowloaded in the terminal
+unzip apache-maven-3.6.3-bin.zip in the terminal
+sudo apt-get update
+snap install openjdk
+sudo apt install openjdk-8-jre-headless
+
+In Jenkins go to Manage Jenkins
+Go to Global Tool Configuration
+Press Maven installations
+Give a Maven name (any name you want)
+Give the path ( in my case it is /home/ubuntu/apache-maven-3.6.3/ to check what the path is type pwd)
+untick install automatically
+
+Press JDk installations
+Give a JDK name ( any name)
+Give the path ( in my case it is usr/lib/jvm/java-8-openjdk-amd64 )(to find path type this, update-alternatives --list java 
+(the path is the ones before the jdk file)
+untick install automatically
+if there is an error saying this is not a jdk diretory, check the path , if correct,
+maybe only the jre is installed and not the jdk. so then type this command line sudo apt install default-jdk and then try again
+
+Press Git installations
+Give a Git name (I gave git)
+Give the path ( in my case it is /usr/bin/git to check what the path is type which git)
+untick install automatically
+Save
+
+Go to Manage Jenkins
+Manage Plugins
+Maven Intergration PlugIn in the available column
+Click Install without Restart
+
+Now you will be able to see the Maven Build in the Create Job section of Jenkins
+Git Plugin in the manage plugins section
+Click Install without Restart
