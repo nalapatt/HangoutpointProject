@@ -1,0 +1,11 @@
+- hosts: jenkins
+  connection: local
+  vars:
+    jenkins_hostname: localhost
+    jenkins_admin_username: admin
+    jenkins_admin_password: admin
+  roles:
+    - role: nalapatt.java
+      become: yes
+    - role: nalapatt.jenkins
+      become: yes
