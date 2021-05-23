@@ -3,21 +3,21 @@
 In this project a ticket booking company is facing problems due to using a waterfall method 
 An entertainment company like BookMyShow where users book their tickets have multiple users accessing their web app. Due to less infrastructure availability, they use less machines and provide the required structure. This method includes many weaknesses such as:
 
-Developers must wait till the complete software development for the test results.
-There is a huge possibility of bugs in the test results.
-Delivery process of the software is slow.
-The quality of software is a concern due to continuous feedback referring to things like coding or architectural issues, build failures, test conditions, and file release uploads.
+- Developers must wait till the complete software development for the test results.
+- There is a huge possibility of bugs in the test results.
+- Delivery process of the software is slow.
+- The quality of software is a concern due to continuous feedback referring to things like coding or architectural issues, build failures, test conditions, and file release uploads.
 
 # The solution
 The objective is to implement the automation of the build and release process for
 their product.
 This was achieved by
-Setting up the Jenkins server in master or slave architecture
-Using the Jenkins plugins to perform the computation part on the Docker containers
-Creating Jenkins pipeline script
-Using the GIT web hook to schedule the job on check-in or poll SCM
-Building an image using the artifacts and deploy them on containers
-Removing the container stack after completing the job
+- Setting up the Jenkins server in master or slave architecture
+- Using the Jenkins plugins to perform the computation part on the Docker containers
+- Creating Jenkins pipeline script
+- Using the GIT web hook to schedule the job on check-in or poll SCM
+- Building an image using the artifacts and deploy them on containers
+- Removing the container stack after completing the job
 
 # Steps involved
 
@@ -30,18 +30,18 @@ select Ubuntu 18.04 and default settings and launch instances
 
 # In the master install jenkins and ansible
 # Clone Repository that use ansible playbooks to install jenkins and java
- git clone https://github.com/nalapatt/ansible-role-jenkins.git
- git clone https://github.com/nalapatt/ansible-role-java.git
+ - git clone https://github.com/nalapatt/ansible-role-jenkins.git
+ - git clone https://github.com/nalapatt/ansible-role-java.git
  
  # Install python
- sudo apt install -y git zip python
+ - sudo apt install -y git zip python
  
  # Create 2 files for roles and config
-cat inv.yml
+- cat inv.yml
 [jenkins]
 localhost
 
-cat install-jenkins.yml
+- cat install-jenkins.yml
 - hosts: jenkins
   connection: local
   vars:
