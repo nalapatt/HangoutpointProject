@@ -106,43 +106,71 @@ Now you will be able to see the Maven Build in the Create Job section of Jenkins
 Git Plugin in the manage plugins section
 Click Install without Restart
 
-# add slave as jenkins user 
-sudo useradd -m jenkins
-sudo -u jenkins mkdir /home/jenkins/.ssh
+# in the slave terminal
+# give permissions to slave
+sudo su 
+pwd
+mkdir jenkins
+chmod 777 jenkins
+# install java in slave
+sudo apt-get update
+sudo snap install openjdk
+sudo apt install openjdk-8-jre-headless
 
-# in master
-ssh-keygen -t rsa ( just press enter for all the questions) ( it will create an ssh private key is id_rsa and a public key in id_rsa.pub) 
-cat .ssh/id_rsa.pub >> .ssh/authorized_keys ( to copy the public keys into the authorized_keys file)
-cat .ssh/authorized_keys 
 
-# in slave
-sudo -u jenkins vi /home/jenkins/.ssh/authorized_keys (cut and paste and copy the master key here)
-esc :wq to save and exit
-ssh jenkins@172.31.20.35
-see if connection is there and then exit
 
-# in the master copy 
-sudo cp ~/.ssh/known_hosts /var/lib/jenkins/.ssh
 
 # in the jenkins UI
+manage plugins
+available 
+ssh build plugin
+ssh agent
+install without restart
+
 manage jenkins
 manage nodes and cloud
 new node
-give a name
+give a name my_name_1
 click permanent agent
 ok
-remote root /home/jenkins
-label my_slave
+remote root /home/ubuntu/jenkins
+label my_slave_1
 use as much as possible
-launch agents via ssh
-host ip address of slave  (with dots)
+launch agents using ssh
+host :slave public ip address
+add credentials
 add jenkins
-ssh user with private key
-username jenkins
-description jenkins private key credentials
-enter directly
-cat id_rsa
-copy and paste here
+ssh username with private key
+scope global
+id jenkins-slave
+descr jenkins-slave
+username ubuntu
+ctrl N create another terminal 
+cd downloads 
+cat the private pem key
+copy and paste into private key add of jenkins ui
+click add
+select the credentials that was just created
+manually trusted key verification
+keep agent online as much
+save
+
+launch the agent 
+it should show agent is connected
+
+restrict where the project can be run as the name of the slave
+
+
+save 
+
+go to the agent
+copy the agent.jar file to the root directory
+then execute the commands which are shown in the UI
+now agent should show connected
+manage jenkins
+configure global security
+agents - random 
+save and apply
 
 # clone the jenkins maven pipeline which has a demo app and test app
 https://github.com/nalapatt/JenkinsCI-CDDockerImage.git
