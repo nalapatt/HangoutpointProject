@@ -178,7 +178,7 @@ this will build and push the image into docker hub
 # 2nd scenario using maven to build , then jenkins, ansible and docker to create an image and push into dockerhub
 
 # create 2 ec2 instances, master and slave
-slave will be where the docker container will be deployed
+create 2 ubuntu 18.04 instances in aws, make sure port 8080 is exposed in the master
 
 # Install docker in master
 sudo apt-get update
@@ -188,18 +188,41 @@ docker --version
 # start docker in master
 sudo service docker start 
 
-# give user permissions
+# install jenkins and jdk in master
+
+sudo apt install openjdk-8* 
+sudo wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
+    /etc/apt/sources.list.d/jenkins.list'
+ sudo apt-get update
+ sudo apt-get install jenkins 
+ ipaddressofmaster:8080 in browser (example:ec2-52-207-250-4.compute-1.amazonaws.com:8080)
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+copy and paste in browser
+continue
+update suggested plugins
+update password
+url suggestions default
+save and finish
+start using jenkins
+
+# give user permissions in master
 sudo usermod -a -G docker jenkins
 sudo service jenkins restart
 sudo chkconfig docker on
 sudo service docker start
+refresh browser
+sign in again 
 
 # install maven through jenkins ui
 manage jenkins
 global tool configuration
-add maven3 install automatically
+add
+mymaven 
+check install automatically
+apply and save
 
-# install ansible to deploy container in slave server
+# install ansible in master to deploy container in slave server
 sudo apt-get install software-properties-common
 sudo apt-add-repository ppa:ansible/ansible
 sudo apt-get update
@@ -209,8 +232,9 @@ ansible --version
 
 # configure ansible in jenkins UI
 manage jenkins
-manage plugins
-install without restart ansible
+manage plugins - available
+check ansible
+select install without restart 
 manage jenkins
 global tool configuration
 add ansible
@@ -219,10 +243,16 @@ myansible
 save
 
 # create a pipeline project
+new item
+hangoutproject
+pipeline job
+ok
+select pipeline 
 pipeline script
 
 # stage scm checkout
-git clone snippet generator
+pipeline syntax
+snippet generator - git 
 url https://github.com/nalapatt/dockeransiblejenkins.git
 master
 credentials
@@ -238,8 +268,9 @@ copy this and paste in pipeline script
 # stage maven build
 pipeline syntax
 declarative directive generator
-sample directive tools
-maven3 
+sample directive - tool
+tool type - maven
+tool - mymaven 
 generate pipeline script
 copy and paste in pipeline script
 
@@ -268,14 +299,14 @@ copy and paste in pipeline script
 
 pipeline syntax
 declarative directive generator
-sample directive bind credentials to variables
+sample directive: with credentials bind credentials to variables
 add secret text
 add credentials
 secret text
 docker hub passowrd
 id dockerhub
 decription dockerhub
-variable dockerhubpwd
+variable dockerHubPwd
 credentials select dockerhub
 generate pipeline script
 copy and paste in pipeline script
