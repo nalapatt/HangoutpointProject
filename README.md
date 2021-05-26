@@ -180,6 +180,14 @@ this will build and push the image into docker hub
 # create 2 ec2 instances, master and slave
 create 2 ubuntu 18.04 instances in aws, make sure port 8080 is exposed in the master
 
+ # in slave terminal
+ sudo su -
+ apt-get update
+ hostname jenkins-slave
+ logout
+ sudo su -
+ apt install openjdk-8* -y
+
 # Install docker in master
 sudo apt-get update
 sudo apt install docker.io
@@ -196,6 +204,48 @@ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
     /etc/apt/sources.list.d/jenkins.list'
  sudo apt-get update
  sudo apt-get install jenkins 
+ 
+ # check if jenkins is running in master
+ sudo su
+ cd /etc/apt/sources.list.d
+ ps faxu | grep jenkins
+ su - jenkins
+ pwd
+ ssh-keygen -t rsa
+ enter for all the questions
+ note the directory where the file is stored
+ cat  /var/lib/jenkins/.ssh/id_rsa.pub (if this is where the public key is stored)
+ copy this key and store it somewhere
+ 
+ # in the slave 
+ sudo su 
+ adduser jenkins
+ enter the password and remember what that is
+ reenter it 
+ just enter for all the other questions
+ information correct y
+ 
+ su - jenkins
+ ls -lrth
+ ls - la
+ ssh jenkins@localhost (it will be denied this is just to create a .ssh/known_hosts file)
+ ll
+ 
+ cd .ssh/
+ ll
+ vi authorized_keys
+ paste the master public key here
+ :wq save and exit
+ ip r
+ copy the IP address of the slave
+ 
+ # in the master
+ ssh jenkins@IPaddress of slave ( which was copied from the slave)
+ everything should show connection if everything is alright
+ exit and go back to your master VM
+ 
+
+
  ipaddressofmaster:8080 in browser (example:ec2-52-207-250-4.compute-1.amazonaws.com:8080)
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 copy and paste in browser
