@@ -205,6 +205,7 @@ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
  sudo apt-get update
  sudo apt-get install jenkins 
  
+ 
  # check if jenkins is running in master
  sudo su
  cd /etc/apt/sources.list.d
@@ -246,7 +247,69 @@ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
  
 
 
- ipaddressofmaster:8080 in browser (example:ec2-52-207-250-4.compute-1.amazonaws.com:8080)
+
+# give user permissions in master
+# ignore for now
+sudo usermod -a -G docker jenkins
+sudo service jenkins restart
+sudo chkconfig docker on
+sudo service docker start
+refresh browser
+sign in again 
+# until here 
+
+# give docker user permissions in master and server
+useradd dockeradmin
+passwd dockeradmin
+usermod -aG docker dockeradmin
+
+# install ansible in master to deploy container in slave server
+sudo apt-get install software-properties-common
+sudo apt-add-repository ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install ansible
+ansible --version
+(get the executable location /usr/bin/ansible
+
+# give ansible user permissions in master and server
+useradd ansadmin
+passwd ansadmin
+usermod -aG ansible ansadmin
+visudo 
+under read drop in files
+add
+ec2-user     ALL=(ALL)    NOPASSWD=ALL 
+ansadmin     ALL=(ALL)    NOPASSWD=ALL
+esc :wq
+cd /etc/ssh
+vi sshd_config
+uncomment passwordauthentication = yes
+comment passwordauthentication = no
+esc :wq
+service sshd restart
+
+# in master
+login as ansadmin
+ssh-keygen (enter for the questions)(public and private key is generated)
+
+# in slave
+ip r ( get ip address )
+
+# in master
+cd .ssh
+ssh-copy-id ipaddressofslave
+create a password that will be used for ansible
+you should have connected to the server
+exit
+sudo vi/etc/ansible/hosts
+delete everything
+add
+[all_hosts]
+ipaddressofserver
+esc :wq
+
+# jenkins UI
+ipaddressofmaster:8080 in browser (example:ec2-52-207-250-4.compute-1.amazonaws.com:8080)
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 copy and paste in browser
 continue
@@ -256,13 +319,13 @@ url suggestions default
 save and finish
 start using jenkins
 
-# give user permissions in master
-sudo usermod -a -G docker jenkins
-sudo service jenkins restart
-sudo chkconfig docker on
-sudo service docker start
-refresh browser
-sign in again 
+# publish over ssh
+# ignore for now
+manage jenkins
+configure system
+publish over ssh
+hostname
+# until here
 
 # install maven through jenkins ui
 manage jenkins
@@ -272,13 +335,6 @@ mymaven
 check install automatically
 apply and save
 
-# install ansible in master to deploy container in slave server
-sudo apt-get install software-properties-common
-sudo apt-add-repository ppa:ansible/ansible
-sudo apt-get update
-sudo apt-get install ansible
-ansible --version
-(get the executable location /usr/bin/ansible
 
 # configure ansible in jenkins UI
 manage jenkins
