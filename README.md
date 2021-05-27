@@ -175,7 +175,9 @@ and commit to trigger a build
 this will build and push the image into docker hub
 
 
-# 2nd scenario using maven to build , then jenkins, ansible and docker to create an image and push into dockerhub
+# 2nd scenario using maven to build , then jenkins and docker to create an image and push into dockerhub and 
+# run an ansible playbook to create a container in the slave nodes, also remove the container after it has been deployed
+
 
 # create 2 ec2 instances, master and slave
 create 2 ubuntu 18.04 instances in aws, make sure port 8080 is exposed in the master
@@ -186,8 +188,8 @@ create 2 ubuntu 18.04 instances in aws, make sure port 8080 is exposed in the ma
  hostname jenkins-slave
  logout
  sudo su -
- apt install openjdk-8* -y
-
+sudo apt install openjdk-8* 
+ 
 # Install docker in master
 sudo apt-get update
 sudo apt install docker.io
@@ -240,7 +242,7 @@ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
  ip r
  copy the IP address of the slave
  
- # in the master
+ # check if ssh from jenkins user to the slaves works in the master
  ssh jenkins@IPaddress of slave ( which was copied from the slave)
  everything should show connection if everything is alright
  exit and go back to your master VM
