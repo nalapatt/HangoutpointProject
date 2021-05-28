@@ -191,6 +191,7 @@ create 2 ubuntu 18.04 instances in aws, make sure port 8080 is exposed in the ma
 sudo apt install openjdk-8* 
  
 # Install docker in master
+
 sudo apt-get update
 sudo apt install docker.io
 docker --version
@@ -209,7 +210,7 @@ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
  
  
  # check if jenkins is running in master
- sudo su
+ sudo su -
  cd /etc/apt/sources.list.d
  ps faxu | grep jenkins
  su - jenkins
@@ -273,16 +274,45 @@ sudo apt-get install ansible
 ansible --version
 (get the executable location /usr/bin/ansible
 
+sudo su -
+vi myhosts.txt
+[dev]
+ipaddress of slave   ansible_ssh_user=root ansible_ssh_pass=akaadh123
+esc :wq
+pwd
+(this is where the inv file should be )
+
+cd /etc/ansible/ansible.cfg
+[defaults]
+inventory = /root/myhosts.txt (whereever you created the myhosts.txt file)
+ansible_host_key_checking=FALSE
+export ANSIBLE_HOST_KEY_CHECKING=False
+esc:wq
+
+cd /etc/ansible/hosts
+[dev]
+slave ansible_ssh_host=ipaddressofslave
+esc :wq
+ansible dev --list-hosts (this will show the hosts)
+ansible dev -m ping (this will show if pingable)
+
+exit
+
 # give ansible user permissions in master and server
 useradd ansadmin
 passwd ansadmin
-usermod -aG ansible ansadmin
+
 visudo 
 under read drop in files
 add
-ec2-user     ALL=(ALL)    NOPASSWD=ALL 
-ansadmin     ALL=(ALL)    NOPASSWD=ALL
+
+## Read drop-in files from /etc/sudoers.d ( the # here does not mean a comment)
+#includedir /etc/sudoers.d
+ec2-user     ALL=(ALL)    NOPASSWD: ALL 
+ansadmin     ALL=(ALL)    NOPASSWD: ALL
+
 esc :wq
+
 cd /etc/ssh
 vi sshd_config
 uncomment passwordauthentication = yes
@@ -303,7 +333,7 @@ ssh-copy-id ipaddressofslave
 create a password that will be used for ansible
 you should have connected to the server
 exit
-sudo vi/etc/ansible/hosts
+sudo vi /etc/ansible/hosts
 delete everything
 add
 [all_hosts]
@@ -413,9 +443,9 @@ add credentials
 secret text
 docker hub passowrd
 id dockerhub
-decription dockerhub
+decription docker-hub
 variable dockerHubPwd
-credentials select dockerhub
+credentials select docker-hub
 generate pipeline script
 copy and paste in pipeline script
 
@@ -437,8 +467,8 @@ path deploy-docker.yml
 inv path dev.inv
 add ssh credentials jenkins
 ssh username with private key
-devserver
-devserver
+dev-slave
+dev-slave
 ubuntu
 add private pem key
 copy and paste
@@ -668,3 +698,199 @@ url - git where Jenkinsfile resides
 
 
 
+
+
+# 3rd scenario 
+# 3 VMs ansible jenkins and slave 
+create 3 ec2 instances in aws
+
+# name them
+ansible
+jenkins
+slave
+
+# configure jenkins and docker in jenkins server
+ 
+ 
+# Install docker in jenkins server
+
+sudo apt-get update
+sudo apt install docker.io
+docker --version
+
+# start docker in jenkins
+sudo service docker start 
+
+# install jenkins and jdk in jenkins
+
+sudo apt install openjdk-8* 
+sudo wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
+    /etc/apt/sources.list.d/jenkins.list'
+ sudo apt-get update
+ sudo apt-get install jenkins 
+ 
+ 
+ 
+# give user permissions to jenkins user
+
+sudo usermod -a -G docker jenkins
+sudo service jenkins restart
+sudo chkconfig docker on
+sudo service docker start
+refresh browser
+sign in again 
+ 
+# configure ansible in ansible ec2 instance
+
+# install ansible in master to deploy container in slave server
+sudo apt-get update
+sudo apt-get install software-properties-common
+sudo apt-add-repository ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install ansible
+ansible --version
+(get the executable location /usr/bin/ansible
+
+# add hosts
+vi etc/ansible/hosts
+add
+[deployserver]
+Public IP address of slave in ec2
+[jenkinsserver]
+Public IP address of jenkins in ec2
+esc :wq
+
+# change the config
+/etc/ansible/ansible.cfg
+
+# update jenkins and slave with ansible ssh keys 
+
+# jenkins server update
+sudo apt-get update
+sudo su -
+useradd -d /home/jenkinsserver -m jenkinsserver
+passwd jenkins
+
+enter new password
+retype password
+passwd jenkins passwd -x -1 jenkins (make password so doesnt expire)
+su - jenkins
+pwd
+should show /home/jenkinsserver
+mkdir .ssh
+
+# give permissions to the .ssh directory
+chmod 700 .ssh/
+cd .ssh
+ssh-keygen 
+enter for all the questions
+creates id_rsa and id_rsa.pub ( private and public keys)
+vi authorized_keys
+copy and paste the id_rsa.pub key here
+cat id_rsa
+copy this private key to paste into ansible server
+
+MAKE SURE the permissions are -rw------- in remotehost /.ssh. 
+if not change the permissions by chmod 600
+all three files above will be owned by jenkinsserver. 
+if not change the owner by below command
+chown jenkinsserver:jenkinsserver authorized_keys
+chmod 600 authorized_keys
+
+# create a user in ansible server
+sudo su -
+useradd -d /home/ansibleuser -m ansibleuser
+passwd ansibleuser
+enter new password
+retype password
+passwd ansibleuser passwd -x -1 ansibleuser (make password so doesnt expire)
+su - ansibleuser
+pwd
+should show /home/ansibleuser
+exit
+
+cd ../../
+chown ansibleuser:ansibleuser /etc/ansible
+
+
+cd /etc
+check the ownership of ansible folder it should be under ansibleuser
+cd ansible
+vi remotejenkins.key
+copy and paste the private key from jenkins server
+esc :wq
+ll
+check the ownership and change it
+chmod 600 remotejenkins.key
+# check the connection from ansible to jenkins server
+ssh -p22 -i remotejenkins.key jenkins@3.86.186.116 (public ec2 ip address)
+
+connect-yes
+hope successful
+
+exit
+vi /etc/ansible/hosts
+[jenkins]
+ 54.164.166.210 ansible_ssh_user=jenkinsuser ansible_ssh_private_key_file=/etc/ansible/remotejenkins.key 
+ esc :wq
+ 
+ ansible jenkins -m ping
+ should show success pong 
+
+
+# configure jdk in deployment server
+ sudo apt-get update
+sudo apt install openjdk-8* 
+
+# add user and ssh keys
+apt-get update
+sudo su -
+useradd -d /home/deployserver -m deployserver
+passwd deployserver
+enter new password
+retype password
+passwd deployserver passwd -x -1 deployserver (make password so doesnt expire)
+su - deployserver
+pwd
+should show /home/deployserver
+mkdir .ssh
+
+# give permissions to the .ssh directory
+chmod 700 .ssh/
+cd .ssh
+ssh-keygen 
+enter for all the questions
+creates id_rsa and id_rsa.pub ( private and public keys)
+vi authorized_keys
+copy and paste the id_rsa.pub key here
+cat id_rsa
+copy this private key to paste into ansible server
+
+MAKE SURE the permissions are -rw------- in remotehost /.ssh. 
+if not change the permissions by chmod 600
+all three files above will be owned by deployserver. 
+if not change the owner by below command
+chown deployserver:deployserver authorized_keys
+chmod 600 authorized_keys
+
+vi remotejenkins.key
+copy and paste the private key from jenkins server
+esc :wq
+ll
+check the ownership and change it
+chmod 600 remotejenkins.key
+
+# check the connection from ansible to deployment server
+ssh -p22 -i remotedeployuser.key deployuser@3.86.186.116 (public ec2 ip address)
+
+connect-yes
+hope successful
+
+vi /etc/ansible/hosts
+[deployuser]
+ 54.164.166.210 ansible_ssh_user=deployuser ansible_ssh_private_key_file=/etc/ansible/remotedeployuser.key 
+ esc :wq
+ 
+ ansible deployuser -m ping
+ should show success pong 
