@@ -1,3 +1,48 @@
+# kubernetes set up
+# both in master and slave
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+sudo swapoff –a
+sudo systemctl daemon-reload
+sudo systemctl start kubelet
+sudo systemctl enable kubelet service
+
+# install docker
+sudo apt-get update
+sudo apt install docker.io
+docker --version
+
+Once installed start on all of them
+- sudo service docker start 
+
+
+# only in master
+sudo su -
+kubeadm init
+exit
+now you will see the join token for the worker nodes
+
+mkdir -p $HOME/.kube
+sudo cp -i/etc/kubernetes/admin.conf$HOME/.kube/config
+sudo chown$(id-u):$HOME/.kube/config
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d'\n')"
+kubectl get nodes
+kubectl get pods -all-namespaces
+
+# if you lost the token to get it again
+kubeadm token create --print-join-command
+copy this token and copy in the nodes 
+kubectl get nodes
+now you should see the master amd nodes
+make sure the ports are open to all traffic
+
+
+
 
 
 # Step 1
