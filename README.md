@@ -1,3 +1,270 @@
+# new scenario setting up kubernetes cluster from ansible controller automatically
+
+# change hosts and permissions
+sudo vi /etc/hosts
+add all the hosts master and node
+[master]
+54.164.166.210 
+[ansadmin]
+54.164.166.212 
+[worker]
+54.164.166.211
+[all]
+54.164.166.210 
+54.164.166.211
+
+( change to ip address of different servers, ip r to get the address)
+
+sudo vi /etc/ssh/sshd_config ( if you want to use password)
+change #PermitRootLogin prohibit-password to Permitrootlogin yes
+challengeresponseauthenitication no
+change #passwordauthentication no to passwordauthentication yes esc :wq
+
+sudo systemctl restart sshd
+
+# from ansible controller
+
+sudo su - 
+adduser ansadmin 
+passwd ansadmin 
+give new password (for example welcome123)
+sudo usermod -aG root ansadmin
+visudo (to go into /etc/sudoers)
+add under root
+ansadmin ALL=(ALL) ALL
+su - ansadmin
+generate ssh keys
+ssh-keygen (enter for all the questions)
+cd .ssh
+now you will see id_rsa.pub and id_rsa keys
+# in the master
+sudo su -
+adduser master 
+passwd master
+give new password
+sudo usermod -aG root master ( in case of ubuntu it is group sudo, in centos it is wheel)
+visudo (to go into /etc/sudoers)(under root add)
+master ALL=(ALL) ALL
+su - master
+# in the worker
+sudo su -
+adduser worker 
+passwd worker
+give new password
+sudo usermod -aG root worker
+visudo (to go into /etc/sudoers)(under root add)
+worker ALL=(ALL) ALL
+su - worker
+
+# REMEMBER THE PASSWORDS
+
+copy the public key to the hosts server
+ssh-copy-id -i id_rsa.pub master@172.31.23.115 ( to copy to the deploy server)
+ssh-copy-id -i id_rsa.pub node@172.31.23.115 ( to copy the tomcat server)
+( to copy the files to the deploy server change it to your deploy pvt ip address )
+
+# if you get an error on the password)
+(
+go to the server
+go to root 
+passwd master
+change the password
+and try again
+
+or you can 
+chmod 640 /etc/shadow
+and change passwd
+)
+
+press yes enter password welcome123 key will be added
+  
+ssh -i id_rsa deploy@172.31.23.115 ( to see if you can log in to the server change it your deploy nodes pvt ip address)
+ssh -i id_rsa tomcat@172.31.23.115 ( to see if you can log in to the server change it your tomcat nodes pvt ip address)
+yeah if you did !!
+
+# now you can check if the authorized_keys exist in the .ssh folder here
+cd .ssh
+ls
+exit (to go back to the ansible server VM)
+
+# install ansible
+sudo whoami
+enter the password
+sudo yum update
+sudo amazon-linux-extras install epel
+//yum install epel-release
+sudo yum install ansible
+sudo vi /etc/ansible/hosts
+add hosts
+# check if you can ssh to the host file of /etc/ansible/hosts 
+[master]
+172.31.30.227 ansible_pass=master123 ansible_user=master
+
+[worker]
+172.31.19.177 ansible_pass=worker123 ansible_user=worker
+
+/*[master]
+172.31.19.10  ansible_connection=ssh ansible_user=master
+[worker]
+172.31.19.10  ansible_connection=ssh ansible_user=worker*/
+# git clone
+sudo yum install git 
+git init
+git clone https://github.com/nalapatt/ansible-k8s-setup.git
+
+
+cd ansible-k8s-setup
+vi hosts
+- change the hosts
+- [master]
+172.31.30.227 ansible_pass=master123 ansible_user=master
+
+[worker]
+172.31.19.177 ansible_pass=worker123 ansible_user=worker
+~                           
+pwd
+vi ansible.cfg
+change and insert the path
+inventory : pwd/hosts
+esc :wq
+
+
+ansible master --list 
+ansible worker --list 
+ansible all --list 
+ansible all -m ping 
+(and ping if successful)
+(should should show the respective hosts)
+
+sudo passwd root
+change the password for root the same as master and worker
+so will work for all
+
+ll - shows all the files
+vi k8s-pkg.yml 
+remove the firewall disable
+remove the disable se linux
+ansible-playbook k8s-pkg.yml --syntax-check
+ansible-playbook k8s-pkg.yml  --extra-vars "ansible_sudo_pass=ansible123" ( set all three passwords to this)
+if done YEAH!!!
+vi k8s-master.yml
+edit masters to master
+change to your ip address of your master in apiserver-address=ipaddressof master
+ansible-playbook k8s-master.yml --syntax-check
+check the syntax if alright
+then
+ansible-playbook k8s-master.yml --extra-vars "ansible_sudo_pass=ansible123" 
+if alright YEAAAAH!!!
+
+kubectl get nodes (should see the master)
+
+edit the k8s-workers.yaml
+change the hosts to master
+ansible-playbook k8s-workers.yaml --extra-vars "ansible_sudo_pass=ansible123" 
+if this is done 
+
+kubectl get nodes
+should show all the nodes
+
+YEAH YOU HAVE DONE IT
+
+
+
+if done YEAH!!!
+
+
+
+
+# install using kops
+# 1 ec2 instance ubuntu
+port http, https,22,8080,
+tag name k8s
+launch
+# connect
+# install aws cli and python
+sudo su -
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+apt install unzip
+apt install unzip python
+sudo ./aws/install
+# install kubectl 
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+# create iam role and give permissions
+aws ui
+iam
+roles
+create role
+aws 
+ec2
+next permissions
+choose check
+amazons3fullaccess
+amazonec2fullaccess
+amazonroute53fullaccess
+iamrolefullaccess
+next tags
+key = Name  value = k8s-role
+next review
+name k8s-role 
+everything else as default
+create role
+
+# attach it to ec2 instance
+ec2 instance choose
+actions
+right click
+security
+modify iam role
+choose from drop down k8s-role
+save
+# aws configure
+aws configure
+enter
+enter
+us-west-2
+enter
+# install kops
+curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+chmod +x kops-linux-amd64
+sudo mv kops-linux-amd64 /usr/local/bin/kops
+# route 53
+route53
+dns management
+create hosted zone
+naexample.com
+private hosted since i dont own the domain
+vpc
+choose us-west-2 vpc default
+add tags
+create zone
+# s3 bucket
+make the bucket with any name attached to naexample.com
+aws s3 mb s3://dev.k8s.naexample.com
+# export the bucket
+export KOPS_STATE_STORE=s3://dev.k8s.naexample.com
+# generate key pair
+ssh-keygen
+# create a cluster using kops
+first preview it 
+kops create cluster --cloud=aws --name=dev.k8s.naexample.com --zones=us-west-2a  --dns-zone=naexample.com --dns private 
+if everything looks ok 
+then actually execute it
+kops update cluster --name=dev.k8s.naexample.com
+look through this and actually update it
+kops update cluster --name=dev.k8s.naexample.com --yes
+# give it sometime and then validate
+kops validate cluster
+# you can see the ec2 instances created as master and nodes if everything goes well
+
+
+
+
+
+
+
+
+
 # kubernetes set up
 # both in master and slave
 sudo apt-get update
