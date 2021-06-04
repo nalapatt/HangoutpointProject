@@ -1,4 +1,27 @@
 # new scenario setting up kubernetes cluster from ansible controller automatically
+set up ec2 amazon linux instances
+# controller
+# t2 micro is sufficient
+inbound ports
+80
+8080
+443
+22
+# master
+# has to have atleast 2 cpus t2 medium atleast
+inbound ports
+8080
+TCP	Inbound	6443*	Kubernetes API server	All
+TCP	Inbound	2379-2380	etcd server client API	kube-apiserver, etcd
+TCP	Inbound	10250	kubelet API	Self, Control plane
+TCP	Inbound	10251	kube-scheduler	Self
+TCP	Inbound	10252	kube-controller-manager	Self
+# Worker node(s)
+# has to have atleast 2 cpus t2 medium atleast
+inbound ports
+8080
+TCP	Inbound	10250	kubelet API	Self, Control plane
+TCP	Inbound	30000-32767	NodePort Services†	All
 
 # change hosts and permissions
 sudo vi /etc/hosts
@@ -147,6 +170,10 @@ remove the disable se linux
 ansible-playbook k8s-pkg.yml --syntax-check
 ansible-playbook k8s-pkg.yml  --extra-vars "ansible_sudo_pass=ansible123" ( set all three passwords to this)
 if done YEAH!!!
+sudo usermod -aG docker master
+sudo usermod -aG docker worker
+
+
 vi k8s-master.yml
 edit masters to master
 change to your ip address of your master in apiserver-address=ipaddressof master
@@ -157,11 +184,20 @@ ansible-playbook k8s-master.yml --extra-vars "ansible_sudo_pass=ansible123"
 if alright YEAAAAH!!!
 
 kubectl get nodes (should see the master)
+if error (localhost:8080 refused connection) then do this is root
+
+mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+- y to overwrite config
+
 
 edit the k8s-workers.yaml
 change the hosts to master
 ansible-playbook k8s-workers.yaml --extra-vars "ansible_sudo_pass=ansible123" 
 if this is done 
+
+
 
 kubectl get nodes
 should show all the nodes
@@ -175,7 +211,7 @@ if done YEAH!!!
 
 
 
-# install using kops
+# install using kops, iam role , aws cli
 # 1 ec2 instance ubuntu
 port http, https,22,8080,
 tag name k8s
@@ -256,6 +292,12 @@ kops update cluster --name=dev.k8s.naexample.com --yes
 # give it sometime and then validate
 kops validate cluster
 # you can see the ec2 instances created as master and nodes if everything goes well
+# 3 websites for all the machine etc.
+
+
+2nd ansible playbook scenario
+
+
 
 
 
