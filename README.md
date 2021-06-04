@@ -1,4 +1,15 @@
-# new scenario setting up kubernetes cluster from ansible controller automatically
+# steps that were involved 
+
+# creating an ansible controller instance which runs an ansible-playbook to deploy a kubernetes cluster with one master and 1 node
+# run the playbook to configure the master and nodes
+# this cluster has a master and 2 nodes
+# the master has jenkins installed on it,
+# jenkins user docker and maven to  build an image and deploys it to docker hub
+# the pipeline also creates a container from this image and deploys that to the tomcat server and the worker node
+# every time there is a github commit a new image is build and new container is deployed 
+# after everything is done the container image and the containers should be destroyed
+
+
 set up ec2 amazon linux instances
 # controller
 # t2 micro is sufficient
@@ -82,8 +93,10 @@ su - worker
 # REMEMBER THE PASSWORDS
 
 copy the public key to the hosts server
-ssh-copy-id -i id_rsa.pub master@172.31.23.115 ( to copy to the deploy server)
-ssh-copy-id -i id_rsa.pub node@172.31.23.115 ( to copy the tomcat server)
+ssh-copy-id -i id_rsa.pub master@172.31.23.115 ( to copy to the master server)
+ssh-copy-id -i id_rsa master@172.31.23.115 ( to copy private ip to the master server)
+
+ssh-copy-id -i id_rsa.pub worker@172.31.23.115 ( to copy the tomcat server)
 ( to copy the files to the deploy server change it to your deploy pvt ip address )
 
 # if you get an error on the password)
@@ -201,11 +214,212 @@ if this is done
 kubectl get nodes
 should show all the nodes
 
-# # YEAH YOU HAVE DONE IT
+# # YEAH YOU HAVE DONE creating the kubernetes cluster
+
+# now install jdk and jenkins
+# jdk
+sudo yum update
+su -c "yum install java-1.8.0-openjdk"
+# jenkins
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+sudo yum upgrade
+sudo yum install chkconfig java-devel
+sudo yum install jenkins
+
+# give user docker permissions
+sudo usermod -a -G docker jenkins
+sudo service jenkins restart
+sudo chkconfig docker on
+sudo service docker start
+
+# login to the jenkins UI
+jenkins UIipaddressofjenkins:8080 in browser (example:ec2-52-207-250-4.compute-1.amazonaws.com:8080)
+go to jenkins terminal
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+enter
+the password that you see below copy and paste in browser
+continue
+update suggested plugins
+update password
+url suggestions default
+save and finish
+start using jenkins
+
+# manage plugins
+make sure these are installed
+check in available plugins
+git parameters plugin
+ssh plugin
+ssh agent
+ssh build agent
+ssh credentials
+ssh pipeline
+ssh connection
+install without restart
+# configure global
+add maven
+mymaven 
+install automatically
+git
+default
+/bin/git
+save
+
+# set up container server
+# configure tomcat
+sudo yum update
+su -c "yum install java-1.8.0-openjdk"
+
+sudo su -
+adduser tomcat
+passwd
+enter password (remember this )
+su - tomcat
+# in master change the hosts file to include tomcat
+vi /etc/hosts
+[tomcat]
+172.31.23.115
+
+cd .ssh from the ansible controller
+ssh-copy-id -i id_rsa.pub tomcat@172.31.5.18
+
+go to the tomcat server UI
+tomcat 8 tar.gz right click copy link address ( https://downloads.apache.org/tomcat/tomcat-8/v8.5.66/bin/apache-tomcat-8.5.66.tar.gz)
+wget https://downloads.apache.org/tomcat/tomcat-8/v8.5.66/bin/apache-tomcat-8.5.66.tar.gz
+tar -xvzf apache-tomcat-8.5.66.tar.gz (the gz file)
+mv apache-tomcat-8.5.66 tomcat
+cd tomcat/conf
+vi server.xml
+change 8080 port to 8090
+cd ../bin
+./startup.sh
+public ipaddress of node:8090
+you should see the tomcat server
+click manager app
+you will see an error message
+go back to the terminal
+exit
+find / -name context.xml
+it shows locations of the files with that name ( for example for me i got
+/root/tomcat/conf/context.xml
+/root/tomcat/webapps/manager/META-INF/context.xml
+/root/tomcat/webapps/examples/META-INF/context.xml
+/root/tomcat/webapps/host-manager/META-INF/context.xml ) so i did
+( vi /root/tomcat/conf/context.xml
+vi /root/tomcat/webapps/manager/META-INF/context.xml
+vi /root/tomcat/webapps/examples/META-INF/context.xml
+vi /root/tomcat/webapps/host-manager/META-INF/context.xml )
+cd to all the directories mentioned here one by one
+if you see a valve line comment it out
+vi context.xml
+comment the lines
+!
+so '<!-- '
+in the beginning
+and in the end
+' -->!'
+this was found only in the 2nd and 4th file)
+esc :wq
+after that save and quit ! esc :wq
+su - tomcat
+cd ../conf
+vi tomcat-users.xml
+go to the role section and add
+"<role rolename="tomcat"/>
+  <role rolename="manager-gui"/>
+  <role rolename="admin-gui"/>
+  <role rolename="manager-script"/>
+  <user username="admin" password="admin" roles="tomcat,manager-gui,admin-gui,manager-script"/> "
+  without the " "
+  
+- save esc :wq - manager app sign in with admin and admin you are signed in
+go to the tomcat UI manager app should show a sign in
+yeah done
 
 
+# add credentials for github https://github.com/nalapatt/dockeransiblejenkins.git
+add credentials
+username with password
+username (github username)
+password ( github password)
+id github
+description github
+# add credentials for docker hub
+username with secret text
+secret ( docker hub password)
+id docker-hub
+description docker-hub
 
-if done YEAH!!!
+# add credentials for container deploy
+ssh username with private key
+dev-slave
+dev-slave
+worker
+add private key from master
+# configure jenkins ssh keys credentials
+- manage jenkins 
+- manage credentials
+- Stores scoped to Jenkins
+-  go to the global drop down box
+-   and add credentials 
+-   ssh username with private key 
+-   id dev-server
+-    description dev-server
+-     username deploy 
+-     private key enter directly 
+-     add
+-      go back to the terminal 
+-      sudo su - 
+-      su - jenkins
+-       cd .ssh
+-        cat id_rsa (get the private key copy and paste in the UI )
+-        ok
+-   id tomcat-server
+-    description tomcat-server
+-     username tomcat 
+-     private key enter directly 
+-     add
+-      go back to the terminal 
+-      sudo su - 
+-      su - jenkins
+-       cd .ssh
+-        cat id_rsa (get the private key copy and paste in the UI )
+-        ok
+-        
+# Create a new pipeline project
+new item pipeline
+
+add pipeline script ( JenkinsFile of https://github.com/nalapatt/JenkinsCI-CDDocker.git)
+
+Poll SCM ( H/5* * * * )every 5 mins for new commit
+
+Build now
+
+If all the stages are done then success
+
+check public ip:8090/dockeransible
+
+should show the index.html
+
+commit github changes and check if there is a new build
+
+check the html again
+
+YEAH PIPELINE DONE
+
+# post build actions to remove containers and images
+
+stage('Remove Unused docker image') {
+  steps{
+    sh "docker rmi nalapatt123/hariapp:${DOCKER_TAG}"
+  }
+}
+stage('docker stop container and remove container') {
+   sh 'docker ps -f name=my-app -q | xargs --no-run-if-empty docker container stop'
+   sh 'docker container ls -a -fname=my-app -q | xargs -r docker container rm'
+ }      
 
 
 
