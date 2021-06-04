@@ -126,10 +126,6 @@ add hosts
 [worker]
 172.31.19.177 ansible_pass=worker123 ansible_user=worker
 
-/*[master]
-172.31.19.10  ansible_connection=ssh ansible_user=master
-[worker]
-172.31.19.10  ansible_connection=ssh ansible_user=worker*/
 # git clone
 sudo yum install git 
 git init
@@ -170,10 +166,13 @@ remove the disable se linux
 ansible-playbook k8s-pkg.yml --syntax-check
 ansible-playbook k8s-pkg.yml  --extra-vars "ansible_sudo_pass=ansible123" ( set all three passwords to this)
 if done YEAH!!!
+
+# go into the respective terminals and in root
+
 sudo usermod -aG docker master
 sudo usermod -aG docker worker
 
-
+# change yaml files 
 vi k8s-master.yml
 edit masters to master
 change to your ip address of your master in apiserver-address=ipaddressof master
@@ -193,7 +192,7 @@ mkdir -p $HOME/.kube
 
 
 edit the k8s-workers.yaml
-change the hosts to master
+change the hosts to master and ip address in hostsvars[]
 ansible-playbook k8s-workers.yaml --extra-vars "ansible_sudo_pass=ansible123" 
 if this is done 
 
@@ -202,7 +201,7 @@ if this is done
 kubectl get nodes
 should show all the nodes
 
-YEAH YOU HAVE DONE IT
+# # YEAH YOU HAVE DONE IT
 
 
 
