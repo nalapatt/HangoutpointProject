@@ -30,6 +30,7 @@ TCP	Inbound	10252	kube-controller-manager	Self
 # Worker node(s)
 # has to have atleast 2 cpus t2 medium atleast
 inbound ports
+8090
 8080
 TCP	Inbound	10250	kubelet API	Self, Control plane
 TCP	Inbound	30000-32767	NodePort Services†	All
